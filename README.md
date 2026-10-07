@@ -1,6 +1,6 @@
 # 🏋️ AI Real-time GYM Coach
 
-An AI-powered real-time gym coaching application that uses computer vision and pose detection to monitor exercise movements, track workout progress, and provide intelligent coaching feedback.
+An AI-powered real-time gym coaching application that uses **computer vision and pose detection** to monitor exercise movements, track workout progress, and provide intelligent coaching feedback.
 
 ## 📌 Project Overview
 
@@ -10,7 +10,7 @@ The application uses a webcam to detect body pose landmarks in real time and ana
 
 ## ✨ Features
 
-* 👤 User login and personalized workout session
+* 👤 User login and personalized workout sessions
 * 🏋️ Workout plan creation
 * 🎯 Exercise selection
 * 🔢 Sets and repetitions tracking
@@ -35,17 +35,16 @@ The project currently includes exercise analysis for:
 
 ## 🛠️ Technologies Used
 
-* **Python**
-* **Streamlit**
-* **MediaPipe**
-* **OpenCV**
-* **NumPy**
-* **Pandas**
-* **Streamlit-WebRTC**
-* **Groq API**
-* **gTTS**
-* **AI / Computer Vision**
-* **Pose Estimation**
+| Category             | Technologies                         |
+| -------------------- | ------------------------------------ |
+| Programming Language | Python                               |
+| Web Framework        | Streamlit                            |
+| Computer Vision      | OpenCV, MediaPipe                    |
+| Data Processing      | NumPy, Pandas                        |
+| Real-time Video      | Streamlit-WebRTC                     |
+| AI                   | Groq API                             |
+| Voice Feedback       | gTTS                                 |
+| Core Concepts        | AI, Computer Vision, Pose Estimation |
 
 ## 📂 Project Structure
 
@@ -71,26 +70,26 @@ AI Real-time GYM Coach
 
 ## ⚙️ Installation
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/PreshitaSomkuwar/ai-real-time-gym-coach.git
 ```
 
-### 2. Open the project
+### 2. Open the Project
 
 ```bash
 cd ai-real-time-gym-coach
 cd "Main App"
 ```
 
-### 3. Create a virtual environment
+### 3. Create a Virtual Environment
 
 ```bash
 python -m venv venv
 ```
 
-### 4. Activate the virtual environment
+### 4. Activate the Virtual Environment
 
 **Windows:**
 
@@ -98,7 +97,7 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-### 5. Install dependencies
+### 5. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -110,7 +109,7 @@ The application may require API credentials for AI-powered coaching features.
 
 **Do not upload API keys or secret credentials to GitHub.**
 
-For local development, configure your credentials using your local Streamlit secrets configuration or environment variables.
+For local development, configure credentials using your local Streamlit secrets configuration or environment variables.
 
 ## ▶️ Run the Application
 
@@ -147,6 +146,10 @@ Voice Feedback
 The main objective of this project is to develop an AI-assisted gym coaching system that can provide real-time exercise monitoring and feedback using computer vision and artificial intelligence.
 
 The system aims to make fitness guidance more accessible by combining pose estimation, workout tracking, and AI-based coaching in a single application.
+
+## 📸 Project Screenshots
+
+Screenshots of the application will be added here to demonstrate the user interface, exercise monitoring, pose detection, and workout tracking features.
 
 ## 🚧 Project Status
 
