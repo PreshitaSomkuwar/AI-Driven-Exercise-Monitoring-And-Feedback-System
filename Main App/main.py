@@ -10,6 +10,14 @@ load_dotenv(override=True)
 
 
 # =========================================================
+# BASE DIRECTORY
+# =========================================================
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+
+# =========================================================
 # AUTH
 # =========================================================
 
@@ -85,13 +93,8 @@ from groq import Groq
 # COACHING
 # =========================================================
 
-from services.coaching.llm import (
-    LLMCoach
-)
-
-from services.coaching.tts import (
-    TextToSpeech
-)
+from services.coaching.llm import LLMCoach
+from services.coaching.tts import TextToSpeech
 
 from services.coaching.voice_pipeline import (
     VoicePipeline,
@@ -106,127 +109,144 @@ from services.coaching.voice_pipeline import (
 def set_background():
 
     image_path = os.path.join(
-        os.getcwd(),
-        "static",
+        STATIC_DIR,
         "background.jpg"
     )
 
-    with open(
-        image_path,
-        "rb"
-    ) as image_file:
+    if not os.path.exists(image_path):
+        return
 
-        encoded_image = base64.b64encode(
-            image_file.read()
-        ).decode()
+    try:
+        with open(image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(
+                image_file.read()
+            ).decode("utf-8")
 
-    st.markdown(
-        f"""
-        <style>
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                background-image:
+                    linear-gradient(
+                        rgba(0, 0, 0, 0.15),
+                        rgba(0, 0, 0, 0.15)
+                    ),
+                    url("data:image/jpeg;base64,{encoded_image}");
 
-        html,
-        body,
-        [data-testid="stAppViewContainer"] {{
-            background-image:
-                url("data:image/jpeg;base64,{encoded_image}") !important;
+                background-size: cover !important;
+                background-position: center center !important;
+                background-repeat: no-repeat !important;
+                background-attachment: fixed !important;
+            }}
 
-            background-size: cover !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
-            background-attachment: fixed !important;
-        }}
+            [data-testid="stAppViewContainer"] {{
+                background: transparent !important;
+            }}
 
-        [data-testid="stAppViewContainer"] > .main {{
-            background: transparent !important;
-        }}
+            [data-testid="stAppViewContainer"] > .main {{
+                background: transparent !important;
+            }}
 
-        [data-testid="stHeader"] {{
-            background: transparent !important;
-        }}
+            [data-testid="stHeader"] {{
+                background: transparent !important;
+            }}
 
-        .stApp {{
-            background: transparent !important;
-        }}
+            [data-testid="stToolbar"] {{
+                background: transparent !important;
+            }}
+
+            [data-testid="stSidebar"] {{
+                background: rgba(8, 12, 18, 0.96) !important;
+            }}
+
+            /* Login title */
+            .login-section h1,
+            .login-section p {{
+                color: #000000 !important;
+            }}
+
+            /* Summary */
+            .summary-exercise {{
+                color: #000000 !important;
+                font-size: 1.2rem;
+                font-weight: 600;
+                margin-top: 10px;
+                margin-bottom: 20px;
+            }}
+
+            /* History table */
+            [data-testid="stTable"] {{
+                color: #000000 !important;
+            }}
+
+            [data-testid="stTable"] table {{
+                color: #000000 !important;
+                background-color: #ffffff !important;
+            }}
+
+            [data-testid="stTable"] th,
+            [data-testid="stTable"] td {{
+                color: #000000 !important;
+                background-color: #ffffff !important;
+            }}
+
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+    except Exception as e:
+        print("Background error:", e)
 
 
-        /* =================================================
-           PRE-WORKOUT TEXT
-           ================================================= */
+# =========================================================
+# SESSION DEFAULTS
+# =========================================================
 
-        .pre-workout-black {{
-            color: #000000 !important;
-        }}
+def ensure_session_defaults():
 
-        .pre-workout-black * {{
-            color: #000000 !important;
-        }}
+    defaults = {
+        "audio_to_play": None,
+        "coach_feedback": None,
+        "sets_completed": 0,
+        "current_set_reps": 0,
+        "workout_completed": False,
+        "last_voice_rep": 0,
+        "last_saved_sets_completed": 0,
+        "last_notified_sets_completed": 0,
+        "last_notified_workout_complete": False,
+        "final_workout_summary": None,
+        "current_page": "workout",
+        "final_voice_played": False,
+        "workout_started": False,
 
+        # Safe workout-plan defaults
+        "plan_sets": 3,
+        "plan_reps": 10,
 
-        /* =================================================
-           SUMMARY EXERCISE
-           ================================================= */
+        "target_sets": 3,
+        "reps_per_set": 10,
+        "reps": 0,
+        "current_set_reps": 0,
 
-        .summary-exercise {{
-            color: #000000 !important;
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-top: 10px;
-            margin-bottom: 20px;
-        }}
+        "exercise_type": EXERCISE_OPTIONS[0]
+        if EXERCISE_OPTIONS
+        else "Squats",
+    }
 
+    for key, value in defaults.items():
 
-        /* =================================================
-           WORKOUT HISTORY TABLE
-           ================================================= */
+        if key not in st.session_state:
+            st.session_state[key] = value
 
-        [data-testid="stTable"] {{
-            color: #000000 !important;
-        }}
+        # Safety for old session values
+        if key in ["plan_sets", "plan_reps", "target_sets", "reps_per_set"]:
 
-        [data-testid="stTable"] table {{
-            color: #000000 !important;
-            background-color: #ffffff !important;
-        }}
-
-        [data-testid="stTable"] thead {{
-            color: #000000 !important;
-            background-color: #ffffff !important;
-        }}
-
-        [data-testid="stTable"] tbody {{
-            color: #000000 !important;
-            background-color: #ffffff !important;
-        }}
-
-        [data-testid="stTable"] tr {{
-            color: #000000 !important;
-            background-color: #ffffff !important;
-        }}
-
-        [data-testid="stTable"] th {{
-            color: #000000 !important;
-            background-color: #ffffff !important;
-            font-weight: 700 !important;
-        }}
-
-        [data-testid="stTable"] td {{
-            color: #000000 !important;
-            background-color: #ffffff !important;
-        }}
-
-        [data-testid="stTable"] th *,
-        [data-testid="stTable"] td *,
-        [data-testid="stTable"] tr *,
-        [data-testid="stTable"] tbody *,
-        [data-testid="stTable"] thead *,
-        [data-testid="stTable"] table * {{
-            color: #000000 !important;
-        }}
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+            try:
+                if int(st.session_state[key]) < 1:
+                    st.session_state[key] = 1
+            except Exception:
+                st.session_state[key] = 1
 
 
 # =========================================================
@@ -235,102 +255,65 @@ def set_background():
 
 def render_workout_summary_page():
 
-    st.title(
-        "AI Real-time GYM Coach"
-    )
+    st.title("🏋️ AI Real-time GYM Coach")
 
-    st.markdown(
-        "#### Workout Summary"
-    )
+    st.subheader("Workout Summary")
 
     st.divider()
-
-
-    # =====================================================
-    # GET SUMMARY DATA
-    # =====================================================
 
     summary = st.session_state.get(
         "final_workout_summary",
         {}
     )
 
-
     if not summary:
 
-        st.info(
-            "No completed workout found."
-        )
-
+        st.info("No completed workout found.")
 
         if st.button(
             "🏋️ Start New Workout",
             width="stretch"
         ):
 
-            st.session_state.current_page = "workout"
-
-            st.session_state.workout_started = False
-
-            st.session_state.workout_completed = False
-
-            st.session_state.final_workout_summary = None
-
-            st.session_state.audio_to_play = None
-
-            st.session_state.coach_feedback = None
-
-            st.session_state.final_voice_played = False
+            reset_workout_state()
 
             st.rerun()
 
-
         return
-
-
-    # =====================================================
-    # SUMMARY VALUES
-    # =====================================================
 
     exercise = summary.get(
         "exercise",
         "Unknown"
     )
 
-
     sets_completed = summary.get(
         "sets_completed",
         0
     )
-
 
     target_sets = summary.get(
         "target_sets",
         0
     )
 
-
     total_reps = summary.get(
         "total_reps",
         0
     )
-
 
     target_reps = summary.get(
         "target_reps",
         0
     )
 
-
     performance = summary.get(
         "performance",
         "incomplete"
     )
 
-
-    # =====================================================
-    # FINAL AI VOICE
-    # =====================================================
+    # -----------------------------------------------------
+    # FINAL AUDIO
+    # -----------------------------------------------------
 
     if (
         st.session_state.get("audio_to_play")
@@ -340,54 +323,34 @@ def render_workout_summary_page():
         )
     ):
 
-        print(
-            "🔊 PLAYING FINAL WORKOUT AUDIO"
-        )
-
-
         try:
 
             autoplay_audio(
                 st.session_state.audio_to_play
             )
 
-
             st.session_state.final_voice_played = True
-
-
-            print(
-                "🔥 FINAL WORKOUT AUDIO PLAYED"
-            )
-
 
         except Exception as e:
 
             print(
-                "❌ FINAL AUDIO PLAY ERROR:",
-                str(e)
+                "Final audio error:",
+                e
             )
 
-
-    # =====================================================
+    # -----------------------------------------------------
     # EXERCISE
-    # =====================================================
+    # -----------------------------------------------------
 
     st.markdown(
-        f"""
-        <div class="summary-exercise">
-            🏋️ Exercise: {exercise}
-        </div>
-        """,
-        unsafe_allow_html=True
+        f"### 🏋️ Exercise: {exercise}"
     )
 
-
-    # =====================================================
-    # SUMMARY METRICS
-    # =====================================================
+    # -----------------------------------------------------
+    # METRICS
+    # -----------------------------------------------------
 
     col1, col2, col3 = st.columns(3)
-
 
     with col1:
 
@@ -396,14 +359,12 @@ def render_workout_summary_page():
             f"{sets_completed} / {target_sets}"
         )
 
-
     with col2:
 
         st.metric(
             "🔁 Total Reps",
             f"{total_reps} / {target_reps}"
         )
-
 
     with col3:
 
@@ -412,111 +373,93 @@ def render_workout_summary_page():
             performance.capitalize()
         )
 
-
     st.divider()
 
-
-    # =====================================================
+    # -----------------------------------------------------
     # WORKOUT HISTORY
-    # =====================================================
+    # -----------------------------------------------------
 
-    st.subheader(
-        "📊 Workout History"
-    )
-
+    st.subheader("📊 Workout History")
 
     user_id = st.session_state.get(
-        "user_id",
-        0
+        "user_id"
     )
-
 
     if isinstance(user_id, int):
 
-        history_rows = get_users_exercises(
-            user_id
-        )
+        try:
 
-
-        arr = []
-
-
-        for row in history_rows:
-
-            arr.append(
-                {
-                    "Exercise": row["exercise_name"],
-                    "Date": row["created_at"],
-                    "Reps": row["reps"],
-                    "Sets": row["sets"],
-                    "Time (sec)": row["time"]
-                }
+            history_rows = get_users_exercises(
+                user_id
             )
 
+            rows = []
 
-        df = pd.DataFrame(arr)
+            for row in history_rows:
 
-
-        if not df.empty:
-
-            # =================================================
-            # DATE FORMAT
-            # =================================================
-
-            df["Date"] = pd.to_datetime(
-                df["Date"]
-            )
-
-
-            # =================================================
-            # NEWEST FIRST
-            # =================================================
-
-            df = df.sort_values(
-                by="Date",
-                ascending=False
-            )
-
-
-            # =================================================
-            # DISPLAY DATE AND TIME
-            # =================================================
-
-            df["Date"] = df["Date"].dt.strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
-
-
-            # =================================================
-            # NUMBERING
-            # =================================================
-
-            df.insert(
-                0,
-                "#",
-                range(
-                    1,
-                    len(df) + 1
+                rows.append(
+                    {
+                        "Exercise": row["exercise_name"],
+                        "Date": row["created_at"],
+                        "Reps": row["reps"],
+                        "Sets": row["sets"],
+                        "Time (sec)": row["time"],
+                    }
                 )
+
+            df = pd.DataFrame(rows)
+
+            if not df.empty:
+
+                try:
+
+                    df["Date"] = pd.to_datetime(
+                        df["Date"]
+                    )
+
+                    df = df.sort_values(
+                        by="Date",
+                        ascending=False
+                    )
+
+                    df["Date"] = df["Date"].dt.strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+
+                except Exception:
+                    pass
+
+                df.insert(
+                    0,
+                    "#",
+                    range(
+                        1,
+                        len(df) + 1
+                    )
+                )
+
+                st.dataframe(
+                    df,
+                    width="stretch",
+                    hide_index=True
+                )
+
+            else:
+
+                st.info(
+                    "Aaj se koi workout history nahi hai."
+                )
+
+        except Exception as e:
+
+            print(
+                "History error:",
+                e
             )
-
-
-            # =================================================
-            # DISPLAY TABLE
-            # =================================================
-
-            st.table(
-                df,
-                border="horizontal"
-            )
-
-
-        else:
 
             st.info(
-                "Aaj se koi workout history nahi hai."
+                "Workout history load nahi ho payi."
             )
-
 
     else:
 
@@ -524,13 +467,11 @@ def render_workout_summary_page():
             "No workout history found."
         )
 
-
     st.divider()
 
-
-    # =====================================================
-    # START NEW WORKOUT
-    # =====================================================
+    # -----------------------------------------------------
+    # NEW WORKOUT
+    # -----------------------------------------------------
 
     if st.button(
         "🏋️ Start New Workout",
@@ -538,349 +479,217 @@ def render_workout_summary_page():
         key="start_new_workout_button"
     ):
 
-        print(
-            "🔥 START NEW WORKOUT CLICKED"
-        )
-
-
-        st.session_state.current_page = "workout"
-
-        st.session_state.workout_started = False
-
-        st.session_state.workout_completed = False
-
-        st.session_state.final_workout_summary = None
-
-        st.session_state.audio_to_play = None
-
-        st.session_state.coach_feedback = None
-
-        st.session_state.final_voice_played = False
-
-        st.session_state.sets_completed = 0
-
-        st.session_state.current_set_reps = 0
-
-        st.session_state.reps = 0
-
-        st.session_state.last_voice_rep = 0
-
-        st.session_state.last_saved_sets_completed = 0
-
-        st.session_state.last_notified_sets_completed = 0
-
-        st.session_state.last_notified_workout_complete = False
+        reset_workout_state()
 
         st.rerun()
 
 
 # =========================================================
-# MAIN
+# RESET WORKOUT
 # =========================================================
 
-def main():
+def reset_workout_state():
 
-    st.set_page_config(
-        page_icon="🏋️‍♀️",
-        page_title="AI Real-time GYM Coach",
-        initial_sidebar_state="expanded",
-        layout="centered"
-    )
+    st.session_state.workout_started = False
+    st.session_state.workout_completed = False
+
+    st.session_state.current_page = "workout"
+
+    st.session_state.final_workout_summary = None
+
+    st.session_state.audio_to_play = None
+    st.session_state.coach_feedback = None
+
+    st.session_state.final_voice_played = False
+
+    st.session_state.sets_completed = 0
+    st.session_state.current_set_reps = 0
+    st.session_state.reps = 0
+
+    st.session_state.last_voice_rep = 0
+    st.session_state.last_saved_sets_completed = 0
+    st.session_state.last_notified_sets_completed = 0
+    st.session_state.last_notified_workout_complete = False
 
 
-    # =====================================================
-    # BASIC SETUP
-    # =====================================================
+# =========================================================
+# VOICE PIPELINE
+# =========================================================
 
-    set_background()
+def initialize_voice_pipeline():
 
+    if "voice_pipeline" in st.session_state:
 
-    load_css(
-        os.path.join(
-            os.getcwd(),
-            "static",
-            "style.css"
+        return
+
+    try:
+
+        api_key = os.environ.get(
+            "GROQ_API_KEY",
+            ""
         )
-    )
 
+        if (
+            not api_key
+            and hasattr(st, "secrets")
+            and "GROQ_API_KEY" in st.secrets
+        ):
 
-    inject_local_font(
-        os.path.join(
-            os.getcwd(),
-            "static",
-            "AdobeClean.otf"
-        ),
-        "AdobeClean"
-    )
+            api_key = st.secrets[
+                "GROQ_API_KEY"
+            ]
 
+        if not api_key:
 
-    # =====================================================
-    # DATABASE
-    # =====================================================
+            print(
+                "GROQ API KEY NOT FOUND"
+            )
 
-    init_db()
+            st.session_state.voice_pipeline = None
 
+            return
 
-    # =====================================================
-    # LOGIN
-    # =====================================================
+        groq_client = Groq(
+            api_key=api_key
+        )
 
-    if not render_login_wall():
+        llm_coach = LLMCoach(
+            groq_client
+        )
 
-        return
+        tts = TextToSpeech()
 
-
-    initial_session_defaults()
-
-
-    # =====================================================
-    # SESSION STATE
-    # =====================================================
-
-    if "audio_to_play" not in st.session_state:
-
-        st.session_state.audio_to_play = None
-
-
-    if "coach_feedback" not in st.session_state:
-
-        st.session_state.coach_feedback = None
-
-
-    if "sets_completed" not in st.session_state:
-
-        st.session_state.sets_completed = 0
-
-
-    if "current_set_reps" not in st.session_state:
-
-        st.session_state.current_set_reps = 0
-
-
-    if "workout_completed" not in st.session_state:
-
-        st.session_state.workout_completed = False
-
-
-    if "last_voice_rep" not in st.session_state:
-
-        st.session_state.last_voice_rep = 0
-
-
-    if "last_saved_sets_completed" not in st.session_state:
-
-        st.session_state.last_saved_sets_completed = 0
-
-
-    if "last_notified_sets_completed" not in st.session_state:
-
-        st.session_state.last_notified_sets_completed = 0
-
-
-    if "last_notified_workout_complete" not in st.session_state:
-
-        st.session_state.last_notified_workout_complete = False
-
-
-    if "final_workout_summary" not in st.session_state:
-
-        st.session_state.final_workout_summary = None
-
-
-    if "current_page" not in st.session_state:
-
-        st.session_state.current_page = "workout"
-
-
-    if "final_voice_played" not in st.session_state:
-
-        st.session_state.final_voice_played = False
-
-
-    # =====================================================
-    # SUMMARY PAGE
-    # =====================================================
-
-    if (
-        st.session_state.get(
-            "current_page"
-        ) == "summary"
-    ):
-
-        render_workout_summary_page()
-
-        return
-
-
-    # =====================================================
-    # VOICE PIPELINE
-    # =====================================================
-
-    if "voice_pipeline" not in st.session_state:
+        st.session_state.voice_pipeline = VoicePipeline(
+            llm_coach,
+            tts
+        )
 
         print(
-            "🔥 STEP 1: Creating Voice Pipeline"
+            "VOICE PIPELINE CREATED"
         )
 
+    except Exception as e:
+
+        print(
+            "VOICE PIPELINE ERROR:",
+            e
+        )
+
+        st.session_state.voice_pipeline = None
+
+
+# =========================================================
+# START WORKOUT
+# =========================================================
+
+def start_workout(
+    exercise,
+    target_sets,
+    target_reps
+):
+
+    st.session_state.exercise_type = exercise
+
+    st.session_state.target_sets = max(
+        1,
+        int(target_sets)
+    )
+
+    st.session_state.reps_per_set = max(
+        1,
+        int(target_reps)
+    )
+
+    st.session_state.reps = 0
+    st.session_state.sets_completed = 0
+    st.session_state.current_set_reps = 0
+
+    st.session_state.last_voice_rep = 0
+    st.session_state.last_saved_sets_completed = 0
+    st.session_state.last_notified_sets_completed = 0
+    st.session_state.last_notified_workout_complete = False
+
+    st.session_state.workout_started = True
+    st.session_state.workout_completed = False
+
+    st.session_state.current_page = "workout"
+
+    st.session_state.final_voice_played = False
+
+    st.session_state.workout_started_at = time.time()
+
+    st.session_state.set_cycle_started_at = time.time()
+
+    st.session_state.final_workout_summary = None
+
+    st.session_state.coach_feedback = None
+    st.session_state.audio_to_play = None
+
+    # -----------------------------------------------------
+    # START VOICE
+    # -----------------------------------------------------
+
+    pipeline = st.session_state.get(
+        "voice_pipeline"
+    )
+
+    if pipeline:
 
         try:
 
-            api_key = os.environ.get(
-                "GROQ_API_KEY",
-                ""
+            result = pipeline.process_event(
+                event="workout_started",
+                exercise=exercise,
+                metrics={}
             )
 
+            if result:
 
-            print(
-                "API KEY LOADED:",
-                bool(api_key)
-            )
-
-
-            print(
-                "API KEY PREFIX:",
-                api_key[:4]
-                if api_key
-                else "NONE"
-            )
-
-
-            print(
-                "API KEY LENGTH:",
-                len(api_key)
-            )
-
-
-            if (
-                not api_key
-                and hasattr(st, "secrets")
-                and "GROQ_API_KEY" in st.secrets
-            ):
-
-                api_key = st.secrets[
-                    "GROQ_API_KEY"
-                ]
-
-
-                print(
-                    "🔥 STREAMLIT SECRETS API KEY FOUND"
-                )
-
-
-            if not api_key:
-
-                print(
-                    "❌ GROQ API KEY NOT FOUND"
-                )
-
-            else:
-
-                print(
-                    "🔥 GROQ API KEY FOUND"
-                )
-
-
-            groq_client = Groq(
-                api_key=api_key
-            )
-
-
-            print(
-                "🔥 GROQ CLIENT CREATED"
-            )
-
-
-            llm_coach = LLMCoach(
-                groq_client
-            )
-
-
-            print(
-                "🔥 LLM COACH CREATED"
-            )
-
-
-            tts = TextToSpeech()
-
-
-            print(
-                "🔥 TTS CREATED"
-            )
-
-
-            st.session_state.voice_pipeline = VoicePipeline(
-                llm_coach,
-                tts
-            )
-
-
-            print(
-                "🔥🔥 VOICE PIPELINE CREATED SUCCESSFULLY 🔥🔥"
-            )
-
+                (
+                    st.session_state.audio_to_play,
+                    st.session_state.coach_feedback
+                ) = result
 
         except Exception as e:
 
             print(
-                "❌ VOICE PIPELINE INIT ERROR"
+                "Start voice error:",
+                e
             )
 
 
-            print(
-                "ERROR TYPE:",
-                type(e).__name__
-            )
+# =========================================================
+# SIDEBAR
+# =========================================================
 
-
-            print(
-                "ERROR:",
-                str(e)
-            )
-
-
-            st.session_state.voice_pipeline = None
-
-
-    print(
-        "🔥 VOICE PIPELINE STATUS:",
-        st.session_state.get(
-            "voice_pipeline"
-        )
-    )
-
-
-    # =====================================================
-    # WORKOUT STATE
-    # =====================================================
+def render_sidebar():
 
     workout_started = st.session_state.get(
         "workout_started",
         False
     )
 
-
-    # =====================================================
-    # SIDEBAR
-    # =====================================================
-
     with st.sidebar:
+
+        # IMPORTANT:
+        # No custom HTML here.
+        # This prevents raw HTML appearing on screen.
 
         st.title(
             "🏋️‍♂️ Apna AI Coach"
         )
 
-
-        if st.session_state.get(
+        username = st.session_state.get(
             "username"
-        ):
+        )
+
+        if username:
 
             st.caption(
-                f"👤 Login as {st.session_state.username}"
+                f"👤 Logged in as {username}"
             )
 
-
         st.divider()
-
 
         # =================================================
         # BEFORE WORKOUT
@@ -888,10 +697,9 @@ def main():
 
         if not workout_started:
 
-            st.markdown(
-                "### Workout Plan"
+            st.subheader(
+                "Workout Plan"
             )
-
 
             plan_exercise = st.selectbox(
                 "Exercise",
@@ -899,154 +707,67 @@ def main():
                 key="plan_exercise"
             )
 
+            # Safe sets
+            current_sets = st.session_state.get(
+                "plan_sets",
+                3
+            )
+
+            try:
+                current_sets = max(
+                    1,
+                    int(current_sets)
+                )
+            except Exception:
+                current_sets = 3
 
             plan_sets = st.number_input(
-                "Sets",
-                min_value=0,
-                max_value=50,
-                key="plan_sets",
-                step=1
+                "Target Sets",
+                min_value=1,
+                max_value=20,
+                value=current_sets,
+                step=1,
+                key="plan_sets"
             )
 
+            # Safe reps
+            current_reps = st.session_state.get(
+                "plan_reps",
+                10
+            )
+
+            try:
+                current_reps = max(
+                    1,
+                    int(current_reps)
+                )
+            except Exception:
+                current_reps = 10
 
             plan_reps = st.number_input(
-                "Reps per Set",
-                min_value=0,
-                max_value=50,
-                key="plan_reps",
-                step=1
+                "Reps Per Set",
+                min_value=1,
+                max_value=100,
+                value=current_reps,
+                step=1,
+                key="plan_reps"
             )
 
+            st.write("")
 
-            st.markdown("")
-
-
-            start_session_button = st.button(
-                "Start Workout",
+            if st.button(
+                "▶️ Start Workout",
                 width="stretch",
                 key="start_session_button"
-            )
+            ):
 
-
-            if start_session_button:
-
-                print(
-                    "🔥🔥 START WORKOUT BUTTON CLICKED 🔥🔥"
-                )
-
-
-                st.session_state.exercise_type = (
-                    plan_exercise
-                )
-
-
-                st.session_state.target_sets = int(
-                    plan_sets
-                )
-
-
-                st.session_state.reps_per_set = int(
+                start_workout(
+                    plan_exercise,
+                    plan_sets,
                     plan_reps
                 )
 
-
-                st.session_state.reps = 0
-
-                st.session_state.sets_completed = 0
-
-                st.session_state.current_set_reps = 0
-
-                st.session_state.last_voice_rep = 0
-
-                st.session_state.workout_started = True
-
-                st.session_state.workout_completed = False
-
-                st.session_state.current_page = "workout"
-
-                st.session_state.final_voice_played = False
-
-
-                # Full workout timer
-                st.session_state.workout_started_at = (
-                    time.time()
-                )
-
-
-                st.session_state.set_cycle_started_at = (
-                    time.time()
-                )
-
-
-                st.session_state.last_saved_sets_completed = 0
-
-                st.session_state.last_notified_sets_completed = 0
-
-                st.session_state.last_notified_workout_complete = False
-
-                st.session_state.final_workout_summary = None
-
-                st.session_state.coach_feedback = None
-
-                st.session_state.audio_to_play = None
-
-
-                # =========================================
-                # START WORKOUT VOICE
-                # =========================================
-
-                if st.session_state.get(
-                    "voice_pipeline"
-                ):
-
-                    print(
-                        "🔥 ABOUT TO CALL START VOICE"
-                    )
-
-
-                    result = (
-                        st.session_state.voice_pipeline.process_event(
-                            event="workout_started",
-                            exercise=plan_exercise,
-                            metrics={}
-                        )
-                    )
-
-
-                    print(
-                        "🔥 START VOICE CALL FINISHED"
-                    )
-
-
-                    if result:
-
-                        (
-                            st.session_state.audio_to_play,
-                            st.session_state.coach_feedback
-                        ) = result
-
-
-                        print(
-                            "🔥 START AUDIO RECEIVED"
-                        )
-
-
-                    else:
-
-                        print(
-                            "❌ NO START AUDIO RECEIVED"
-                        )
-
-
-                else:
-
-                    print(
-                        "❌ VOICE PIPELINE IS NONE"
-                    )
-
-
                 st.rerun()
-
 
         # =================================================
         # DURING WORKOUT
@@ -1056,100 +777,100 @@ def main():
 
             exercise = st.session_state.get(
                 "exercise_type",
-                "Unknown"
+                "Squats"
             )
 
-
-            target_sets = st.session_state.get(
-                "target_sets",
-                0
+            target_sets = max(
+                1,
+                int(
+                    st.session_state.get(
+                        "target_sets",
+                        1
+                    )
+                )
             )
 
-
-            target_reps = st.session_state.get(
-                "reps_per_set",
-                0
+            target_reps = max(
+                1,
+                int(
+                    st.session_state.get(
+                        "reps_per_set",
+                        10
+                    )
+                )
             )
-
 
             completed_reps = st.session_state.get(
                 "reps",
                 0
             )
 
-
             completed_sets = st.session_state.get(
                 "sets_completed",
                 0
             )
-
 
             current_set_reps = st.session_state.get(
                 "current_set_reps",
                 0
             )
 
-
-            # =============================================
-            # WORKOUT PLAN
-            # =============================================
+            # -------------------------------------------------
+            # PLAN
+            # -------------------------------------------------
 
             st.subheader(
                 "Workout Plan"
             )
 
-
             st.info(
                 f"🏋️ {exercise}"
             )
-
 
             st.markdown(
                 f"🎯 **{target_sets} Sets × {target_reps} Reps**"
             )
 
-
             st.divider()
 
-
-            # =============================================
+            # -------------------------------------------------
             # LIVE WORKOUT
-            # =============================================
+            # -------------------------------------------------
 
             st.subheader(
                 "📊 Live Workout"
             )
 
+            c1, c2 = st.columns(2)
 
-            st.metric(
-                "Reps",
-                completed_reps
-            )
+            with c1:
 
+                st.metric(
+                    "Reps",
+                    completed_reps
+                )
 
-            st.metric(
-                "Sets",
-                f"{completed_sets} / {target_sets}"
-            )
+            with c2:
 
+                st.metric(
+                    "Sets",
+                    f"{completed_sets} / {target_sets}"
+                )
 
             st.metric(
                 "Current Set Reps",
                 f"{current_set_reps} / {target_reps}"
             )
 
-
             st.divider()
 
-
-            # =============================================
+            # -------------------------------------------------
             # EXERCISE METRICS
-            # =============================================
+            # -------------------------------------------------
 
             st.subheader(
                 f"🏋️ {exercise} Metrics"
             )
-
 
             if exercise == "Squats":
 
@@ -1158,36 +879,30 @@ def main():
                     0
                 )
 
-
                 back_angle = st.session_state.get(
                     "back_angle",
                     0
                 )
-
 
                 depth_status = st.session_state.get(
                     "depth_status",
                     "N/A"
                 )
 
-
                 st.metric(
                     "Knee Angle",
                     f"{knee_angle}°"
                 )
-
 
                 st.metric(
                     "Back Angle",
                     f"{back_angle}°"
                 )
 
-
                 st.metric(
                     "Depth Status",
                     depth_status
                 )
-
 
             elif exercise == "Push-ups":
 
@@ -1196,36 +911,30 @@ def main():
                     0
                 )
 
-
                 body_alignment = st.session_state.get(
                     "body_alignment",
                     "N/A"
                 )
-
 
                 hip_status = st.session_state.get(
                     "hip_status",
                     "N/A"
                 )
 
-
                 st.metric(
                     "Elbow Angle",
                     f"{elbow_angle}°"
                 )
-
 
                 st.metric(
                     "Body Alignment",
                     body_alignment
                 )
 
-
                 st.metric(
                     "Hip Position",
                     hip_status
                 )
-
 
             elif exercise == "Biceps Curls (Dumbbell)":
 
@@ -1234,36 +943,30 @@ def main():
                     0
                 )
 
-
                 shoulder_status = st.session_state.get(
                     "shoulder_status",
                     "N/A"
                 )
-
 
                 swing_status = st.session_state.get(
                     "swing_status",
                     "N/A"
                 )
 
-
                 st.metric(
                     "Elbow Angle",
                     f"{elbow_angle}°"
                 )
-
 
                 st.metric(
                     "Shoulder Stability",
                     shoulder_status
                 )
 
-
                 st.metric(
                     "Swing Detection",
                     swing_status
                 )
-
 
             elif exercise == "Shoulder Press":
 
@@ -1272,36 +975,30 @@ def main():
                     0
                 )
 
-
                 extension_status = st.session_state.get(
                     "extension_status",
                     "N/A"
                 )
-
 
                 back_arch_status = st.session_state.get(
                     "back_arch_status",
                     "N/A"
                 )
 
-
                 st.metric(
                     "Elbow Angle",
                     f"{elbow_angle}°"
                 )
-
 
                 st.metric(
                     "Arm Extension",
                     extension_status
                 )
 
-
                 st.metric(
                     "Back Arch",
                     back_arch_status
                 )
-
 
             elif exercise == "Lunges":
 
@@ -1310,364 +1007,270 @@ def main():
                     0
                 )
 
-
                 torso_angle = st.session_state.get(
                     "torso_angle",
                     0
                 )
-
 
                 balance_status = st.session_state.get(
                     "balance_status",
                     "N/A"
                 )
 
-
                 st.metric(
                     "Front Knee Angle",
                     f"{front_knee_angle}°"
                 )
-
 
                 st.metric(
                     "Torso Angle",
                     f"{torso_angle}°"
                 )
 
-
                 st.metric(
                     "Balance Status",
                     balance_status
                 )
 
-
             st.divider()
 
-
-            # =============================================
+            # -------------------------------------------------
             # END WORKOUT
-            # =============================================
+            # -------------------------------------------------
 
-            end_session_button = st.button(
+            if st.button(
                 "🔴 End Workout",
                 key="end_session_button",
                 width="stretch"
+            ):
+
+                finish_workout()
+
+
+# =========================================================
+# FINISH WORKOUT
+# =========================================================
+
+def finish_workout():
+
+    final_exercise = st.session_state.get(
+        "exercise_type",
+        "Unknown"
+    )
+
+    final_sets = st.session_state.get(
+        "sets_completed",
+        0
+    )
+
+    final_reps = st.session_state.get(
+        "reps",
+        0
+    )
+
+    target_sets = max(
+        1,
+        int(
+            st.session_state.get(
+                "target_sets",
+                1
+            )
+        )
+    )
+
+    target_reps = max(
+        1,
+        int(
+            st.session_state.get(
+                "reps_per_set",
+                10
+            )
+        )
+    )
+
+    target_total_reps = (
+        target_sets * target_reps
+    )
+
+    # -----------------------------------------------------
+    # TIME
+    # -----------------------------------------------------
+
+    workout_started_at = st.session_state.get(
+        "workout_started_at"
+    )
+
+    if workout_started_at:
+
+        workout_time = int(
+            time.time()
+            - workout_started_at
+        )
+
+    else:
+
+        workout_time = 0
+
+    # -----------------------------------------------------
+    # PERFORMANCE
+    # -----------------------------------------------------
+
+    if (
+        final_sets >= target_sets
+        and final_reps >= target_total_reps
+        and target_total_reps > 0
+    ):
+
+        performance = "excellent"
+
+    elif (
+        final_sets > 0
+        or final_reps > 0
+    ):
+
+        performance = "good"
+
+    else:
+
+        performance = "incomplete"
+
+    # -----------------------------------------------------
+    # DATABASE
+    # -----------------------------------------------------
+
+    user_id = st.session_state.get(
+        "user_id"
+    )
+
+    if user_id is not None:
+
+        try:
+
+            add_exercise(
+                user_id=user_id,
+                exercise_name=final_exercise,
+                reps=final_reps,
+                sets=final_sets,
+                time=workout_time
             )
 
+            print(
+                "WORKOUT SAVED"
+            )
 
-            if end_session_button:
+        except Exception as e:
 
-                print(
-                    "🔥🔥 END WORKOUT BUTTON CLICKED 🔥🔥"
-                )
+            print(
+                "DATABASE SAVE ERROR:",
+                e
+            )
 
+    # -----------------------------------------------------
+    # SUMMARY
+    # -----------------------------------------------------
 
-                # =========================================
-                # FINAL WORKOUT VALUES
-                # =========================================
+    st.session_state.final_workout_summary = {
 
-                final_exercise = st.session_state.get(
-                    "exercise_type",
-                    "Unknown"
-                )
+        "exercise": final_exercise,
 
+        "sets_completed": final_sets,
 
-                final_sets = st.session_state.get(
-                    "sets_completed",
-                    0
-                )
+        "target_sets": target_sets,
 
+        "total_reps": final_reps,
 
-                final_reps = st.session_state.get(
-                    "reps",
-                    0
-                )
+        "target_reps": target_total_reps,
 
+        "performance": performance
+    }
 
-                target_sets = st.session_state.get(
-                    "target_sets",
-                    0
-                )
+    # -----------------------------------------------------
+    # FINAL VOICE
+    # -----------------------------------------------------
 
+    st.session_state.final_voice_played = False
 
-                target_reps = st.session_state.get(
-                    "reps_per_set",
-                    0
-                )
+    pipeline = st.session_state.get(
+        "voice_pipeline"
+    )
 
+    if pipeline:
 
-                target_total_reps = (
-                    target_sets * target_reps
-                )
+        try:
 
+            result = pipeline.process_event(
 
-                # =========================================
-                # WORKOUT TIME
-                # =========================================
+                event="workout_completed",
 
-                workout_started_at = (
-                    st.session_state.get(
-                        "workout_started_at"
-                    )
-                )
+                exercise=final_exercise,
 
-
-                if workout_started_at:
-
-                    workout_time = int(
-                        time.time()
-                        - workout_started_at
-                    )
-
-                else:
-
-                    workout_time = 0
-
-
-                # =========================================
-                # PERFORMANCE
-                # =========================================
-
-                if (
-                    final_sets >= target_sets
-                    and final_reps >= target_total_reps
-                    and target_total_reps > 0
-                ):
-
-                    performance = "excellent"
-
-                elif (
-                    final_sets > 0
-                    or final_reps > 0
-                ):
-
-                    performance = "good"
-
-                else:
-
-                    performance = "incomplete"
-
-
-                print(
-                    "🏋️ FINAL EXERCISE:",
-                    final_exercise
-                )
-
-
-                print(
-                    "🏋️ FINAL SETS:",
-                    final_sets
-                )
-
-
-                print(
-                    "🏋️ FINAL REPS:",
-                    final_reps
-                )
-
-
-                print(
-                    "🏋️ WORKOUT TIME:",
-                    workout_time
-                )
-
-
-                print(
-                    "🏋️ PERFORMANCE:",
-                    performance
-                )
-
-
-                # =========================================
-                # SAVE WORKOUT TO DATABASE
-                # =========================================
-
-                user_id = st.session_state.get(
-                    "user_id"
-                )
-
-
-                if user_id is not None:
-
-                    try:
-
-                        add_exercise(
-                            user_id=user_id,
-                            exercise_name=final_exercise,
-                            reps=final_reps,
-                            sets=final_sets,
-                            time=workout_time
-                        )
-
-
-                        print(
-                            "🔥🔥 WORKOUT SAVED TO DATABASE 🔥🔥"
-                        )
-
-
-                    except Exception as e:
-
-                        print(
-                            "❌ WORKOUT DATABASE SAVE ERROR:",
-                            str(e)
-                        )
-
-
-                        st.error(
-                            "Workout save nahi ho paya."
-                        )
-
-
-                else:
-
-                    print(
-                        "❌ USER ID NOT FOUND - WORKOUT NOT SAVED"
-                    )
-
-
-                    st.error(
-                        "User ID nahi mila, workout save nahi hua."
-                    )
-
-
-                # =========================================
-                # SAVE SUMMARY
-                # =========================================
-
-                st.session_state.final_workout_summary = {
-
-                    "exercise": final_exercise,
-
+                metrics={
                     "sets_completed": final_sets,
-
-                    "target_sets": target_sets,
-
                     "total_reps": final_reps,
-
-                    "target_reps": target_total_reps,
-
+                    "target_sets": target_sets,
+                    "reps_per_set": target_reps,
                     "performance": performance
-
                 }
+            )
+
+            if result:
+
+                (
+                    st.session_state.audio_to_play,
+                    st.session_state.coach_feedback
+                ) = result
+
+        except Exception as e:
+
+            print(
+                "Final voice error:",
+                e
+            )
+
+    # -----------------------------------------------------
+    # COMPLETE
+    # -----------------------------------------------------
+
+    st.session_state.workout_started = False
+
+    st.session_state.workout_completed = True
+
+    st.session_state.current_page = "summary"
+
+    st.session_state.last_notified_workout_complete = True
+
+    st.rerun()
 
 
-                # =========================================
-                # FINAL AI VOICE
-                # =========================================
+# =========================================================
+# MAIN PAGE
+# =========================================================
 
-                st.session_state.final_voice_played = False
-
-
-                if st.session_state.get(
-                    "voice_pipeline"
-                ):
-
-                    print(
-                        "🔥🔥 CALLING FINAL WORKOUT VOICE"
-                    )
-
-
-                    result = (
-                        st.session_state.voice_pipeline.process_event(
-                            event="workout_completed",
-                            exercise=final_exercise,
-                            metrics={
-                                "sets_completed": final_sets,
-                                "total_reps": final_reps,
-                                "target_sets": target_sets,
-                                "reps_per_set": target_reps,
-                                "performance": performance
-                            }
-                        )
-                    )
-
-
-                    print(
-                        "🔥 FINAL VOICE RESULT:",
-                        bool(result)
-                    )
-
-
-                    if result:
-
-                        (
-                            st.session_state.audio_to_play,
-                            st.session_state.coach_feedback
-                        ) = result
-
-
-                        print(
-                            "🔥🔥 FINAL AUDIO RECEIVED"
-                        )
-
-
-                    else:
-
-                        print(
-                            "❌ NO FINAL AUDIO RECEIVED"
-                        )
-
-
-                else:
-
-                    print(
-                        "❌ VOICE PIPELINE IS NONE"
-                    )
-
-
-                # =========================================
-                # WORKOUT COMPLETE
-                # =========================================
-
-                st.session_state.workout_started = False
-
-                st.session_state.workout_completed = True
-
-                st.session_state.current_page = "summary"
-
-                st.session_state.last_notified_workout_complete = True
-
-
-                print(
-                    "🔥🔥 WORKOUT MARKED AS COMPLETED"
-                )
-
-
-                print(
-                    "🔥🔥 MOVING TO SUMMARY PAGE"
-                )
-
-
-                st.rerun()
-
-
-    # =====================================================
-    # MAIN PAGE
-    # =====================================================
+def render_main_page():
 
     workout_started = st.session_state.get(
         "workout_started",
         False
     )
 
+    # =====================================================
+    # PAGE TITLE
+    # =====================================================
 
-    st.markdown(
-        """
-        <h1 style="color: #000000 !important;">
-            🏋️‍♂️ AI Real-time GYM Trainer
-        </h1>
-        """,
-        unsafe_allow_html=True
+    # IMPORTANT:
+    # NO CUSTOM HTML HERE.
+    # This prevents the <h1> / <p> code from appearing.
+
+    st.title(
+        "🏋️‍♂️ AI Real-time GYM Trainer"
     )
-
 
     st.markdown(
         "#### Real-time pose detection with proactive AI voice coaching"
     )
 
-
     # =====================================================
-    # AUDIO PLAYBACK
+    # AUDIO
     # =====================================================
 
     if (
@@ -1677,28 +1280,21 @@ def main():
         )
     ):
 
-        print(
-            "🔊 PLAYING AUDIO"
-        )
-
-
         try:
 
             autoplay_audio(
                 st.session_state.audio_to_play
             )
 
-
         except Exception as e:
 
             print(
-                "❌ AUDIO PLAY ERROR:",
-                str(e)
+                "Audio playback error:",
+                e
             )
 
-
     # =====================================================
-    # DURING WORKOUT COACH TEXT
+    # COACH FEEDBACK
     # =====================================================
 
     if (
@@ -1708,17 +1304,13 @@ def main():
         )
     ):
 
-        st.markdown("")
-
-
         st.success(
-            f"🤖 **Coach:** "
+            f"🤖 Coach: "
             f"{st.session_state.coach_feedback}"
         )
 
-
     # =====================================================
-    # PRE-WORKOUT TRAINING OVERVIEW
+    # PRE-WORKOUT
     # =====================================================
 
     if not workout_started:
@@ -1728,41 +1320,44 @@ def main():
             EXERCISE_OPTIONS[0]
         )
 
-
-        selected_sets = st.session_state.get(
-            "plan_sets",
-            0
+        selected_sets = max(
+            1,
+            int(
+                st.session_state.get(
+                    "plan_sets",
+                    3
+                )
+            )
         )
 
-
-        selected_reps = st.session_state.get(
-            "plan_reps",
-            0
+        selected_reps = max(
+            1,
+            int(
+                st.session_state.get(
+                    "plan_reps",
+                    10
+                )
+            )
         )
-
 
         total_target = (
-            int(selected_sets)
-            * int(selected_reps)
+            selected_sets
+            * selected_reps
         )
 
-
-        # =============================================
+        # -------------------------------------------------
         # TODAY'S TRAINING
-        # =============================================
+        # -------------------------------------------------
 
         st.subheader(
             "🏋️ Today's Training"
         )
 
-
-        st.markdown(
+        st.write(
             f"🏋️ Exercise: **{selected_exercise}**"
         )
 
-
         col1, col2, col3 = st.columns(3)
-
 
         with col1:
 
@@ -1771,14 +1366,12 @@ def main():
                 selected_sets
             )
 
-
         with col2:
 
             st.metric(
                 "🔁 Reps / Set",
                 selected_reps
             )
-
 
         with col3:
 
@@ -1787,44 +1380,37 @@ def main():
                 total_target
             )
 
-
         st.divider()
 
-
-        # =============================================
-        # YOUR AI COACH WILL
-        # =============================================
+        # -------------------------------------------------
+        # AI COACH
+        # -------------------------------------------------
 
         st.subheader(
             "🤖 Your AI Coach Will"
         )
 
-
-        st.markdown(
-            "🎯 **Monitor your body position**"
+        st.write(
+            "🎯 Monitor your body position"
         )
 
-
-        st.markdown(
-            "🎙️ **Give real-time voice corrections**"
+        st.write(
+            "🎙️ Give real-time voice corrections"
         )
 
-
-        st.markdown(
-            "📈 **Track your reps and sets**"
+        st.write(
+            "📈 Track your reps and sets"
         )
 
-
-        st.markdown(
-            "💪 **Analyze your workout performance**"
+        st.write(
+            "💪 Analyze your workout performance"
         )
-
 
         st.info(
-            "💡 Set your workout from the sidebar, then click "
-            "**Start Workout** to activate your AI Coach."
+            "💡 Set your workout from the sidebar, "
+            "then click **Start Workout** to activate "
+            "your AI Coach."
         )
-
 
     # =====================================================
     # CAMERA / POSE DETECTION
@@ -1858,11 +1444,26 @@ def main():
             async_processing=True
         )
 
+        # -------------------------------------------------
+        # SYNC LIVE METRICS
+        # -------------------------------------------------
 
-        sync_metrics_update(
-            context
-        )
+        try:
 
+            sync_metrics_update(
+                context
+            )
+
+        except Exception as e:
+
+            print(
+                "Metrics sync error:",
+                e
+            )
+
+        # -------------------------------------------------
+        # LIVE RERUN
+        # -------------------------------------------------
 
         if context.state.playing:
 
@@ -1872,15 +1473,118 @@ def main():
 
             st.rerun()
 
+        # -------------------------------------------------
+        # WEBRTC STYLES
+        # -------------------------------------------------
 
         inject_webrtc_styles()
 
 
 # =========================================================
-# RUN APPLICATION
+# APPLICATION
+# =========================================================
+
+def main():
+
+    st.set_page_config(
+
+        page_title="AI Real-time GYM Coach",
+
+        page_icon="🏋️‍♀️",
+
+        initial_sidebar_state="expanded",
+
+        layout="centered"
+    )
+
+    # =====================================================
+    # LOAD CSS
+    # =====================================================
+
+    load_css(
+        os.path.join(
+            STATIC_DIR,
+            "style.css"
+        )
+    )
+
+    # =====================================================
+    # FONT
+    # =====================================================
+
+    inject_local_font(
+        os.path.join(
+            STATIC_DIR,
+            "AdobeClean.otf"
+        ),
+        "AdobeClean"
+    )
+
+    # =====================================================
+    # BACKGROUND
+    # =====================================================
+
+    set_background()
+
+    # =====================================================
+    # DATABASE
+    # =====================================================
+
+    init_db()
+
+    # =====================================================
+    # LOGIN
+    # =====================================================
+
+    if not render_login_wall():
+
+        return
+
+    # =====================================================
+    # SESSION
+    # =====================================================
+
+    initial_session_defaults()
+
+    ensure_session_defaults()
+
+    # =====================================================
+    # VOICE
+    # =====================================================
+
+    initialize_voice_pipeline()
+
+    # =====================================================
+    # SUMMARY PAGE
+    # =====================================================
+
+    if (
+        st.session_state.get(
+            "current_page"
+        ) == "summary"
+    ):
+
+        render_workout_summary_page()
+
+        return
+
+    # =====================================================
+    # SIDEBAR
+    # =====================================================
+
+    render_sidebar()
+
+    # =====================================================
+    # MAIN CONTENT
+    # =====================================================
+
+    render_main_page()
+
+
+# =========================================================
+# RUN
 # =========================================================
 
 if __name__ == "__main__":
 
     main()
-
