@@ -4,9 +4,12 @@ import av
 import numpy as np
 import mediapipe as mp
 import threading
+
+from pathlib import Path
 from streamlit_webrtc import VideoProcessorBase
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+
 from detectors.squat import SquatDetector
 from detectors.pushup import PushUpDetector
 from detectors.biceps_curl import BicepsCurlDetector
@@ -21,8 +24,18 @@ class VideoProcessorClass(VideoProcessorBase):
         self._latest_metrics = None
         self._exercise_type = "Squats"
 
-        model_path = os.path.join(os.getcwd(), "ml_models", "pose_landmarker_full.task")
-        base_option = python.BaseOptions(model_asset_path=model_path)
+        app_root = Path(__file__).resolve().parents[2]
+
+model_path = app_root / "ml_models" / "pose_landmarker_full.task"
+
+if not model_path.is_file():
+    raise FileNotFoundError(
+        f"Pose model file not found: {model_path}"
+    )
+
+base_option = python.BaseOptions(
+    model_asset_path=str(model_path)
+)
 
         options = vision.PoseLandmarkerOptions(
             base_options=base_option,
