@@ -1,4 +1,3 @@
-import os
 import cv2
 import av
 import numpy as np
@@ -18,10 +17,12 @@ from detectors.lunges import LungesDetector
 from services.config.workout_config import POSE_CONNECTIONS
 
 class VideoProcessorClass(VideoProcessorBase):
-def **init**(self):
-self._lock = threading.Lock()
-self._latest_metrics = None
-self._exercise_type = "Squats"
+
+```
+def __init__(self):
+    self._lock = threading.Lock()
+    self._latest_metrics = None
+    self._exercise_type = "Squats"
 
     app_root = Path(__file__).resolve().parents[2]
     model_path = app_root / "ml_models" / "pose_landmarker_full.task"
@@ -62,11 +63,9 @@ def set_latest_metrics(self, metrics):
 
 def get_latest_metrics(self):
     with self._lock:
-        return (
-            None
-            if self._latest_metrics is None
-            else self._latest_metrics.copy()
-        )
+        if self._latest_metrics is None:
+            return None
+        return self._latest_metrics.copy()
 
 def set_exercise(self, exercise_type):
     with self._lock:
@@ -139,7 +138,6 @@ def _draw_overlays(self, img, metrics, ex_type):
 
 def _draw_squats_overlays(self, img, metrics):
     h, _ = img.shape[:2]
-
     cv2.putText(
         img,
         f"DEPTH: {metrics['depth_status']}",
@@ -152,7 +150,6 @@ def _draw_squats_overlays(self, img, metrics):
 
 def _draw_pushup_overlays(self, img, metrics):
     h, _ = img.shape[:2]
-
     cv2.putText(
         img,
         f"BODY: {metrics['body_alignment']} | HIP: {metrics['hip_status']}",
@@ -165,7 +162,6 @@ def _draw_pushup_overlays(self, img, metrics):
 
 def _draw_curl_overlays(self, img, metrics):
     h, _ = img.shape[:2]
-
     cv2.putText(
         img,
         f"SWING: {metrics['swing_status']}",
@@ -178,7 +174,6 @@ def _draw_curl_overlays(self, img, metrics):
 
 def _draw_press_overlays(self, img, metrics):
     h, _ = img.shape[:2]
-
     cv2.putText(
         img,
         f"EXT: {metrics['extension_status']} | BACK: {metrics['back_arch_status']}",
@@ -191,7 +186,6 @@ def _draw_press_overlays(self, img, metrics):
 
 def _draw_lunge_overlays(self, img, metrics):
     h, _ = img.shape[:2]
-
     cv2.putText(
         img,
         f"BALANCE: {metrics['balance_status']}",
@@ -222,7 +216,6 @@ def recv(self, frame):
 
     if result.pose_landmarks:
         landmarks = result.pose_landmarks[0]
-
         self._draw_skeleton(image, landmarks)
 
         ex_type = self.get_exercise()
@@ -231,9 +224,9 @@ def recv(self, frame):
         if detector:
             metrics = detector.process(landmarks)
             metrics["pose_detected"] = True
-
             self._draw_overlays(image, metrics, ex_type)
             self.set_latest_metrics(metrics)
+
     else:
         self._draw_no_pose_warnings(image)
 
@@ -246,4 +239,10 @@ def recv(self, frame):
     return av.VideoFrame.from_ndarray(image, format="bgr24")
 
 
-   
+
+    
+
+ 
+ 
+
+
