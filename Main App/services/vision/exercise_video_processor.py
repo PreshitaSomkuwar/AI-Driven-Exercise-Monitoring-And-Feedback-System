@@ -24,7 +24,7 @@ class VideoProcessorClass(VideoProcessorBase):
         self._latest_metrics = None
         self._exercise_type = "Squats"
 
-        app_root = Path(__file__).resolve().parents[2]
+app_root = Path(__file__).resolve().parents[2]
 
 model_path = app_root / "ml_models" / "pose_landmarker_full.task"
 
