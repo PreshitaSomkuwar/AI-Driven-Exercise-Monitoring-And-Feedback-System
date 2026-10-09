@@ -17,9 +17,7 @@ from detectors.lunges import LungesDetector
 from services.config.workout_config import POSE_CONNECTIONS
 
 class VideoProcessorClass(VideoProcessorBase):
-
-```
-def __init__(self):
+    def __init__(self):
     self._lock = threading.Lock()
     self._latest_metrics = None
     self._exercise_type = "Squats"
