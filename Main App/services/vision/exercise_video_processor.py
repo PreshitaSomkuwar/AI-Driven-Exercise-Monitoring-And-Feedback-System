@@ -19,46 +19,46 @@ from services.config.workout_config import POSE_CONNECTIONS
 
 
 class VideoProcessorClass(VideoProcessorBase):
-    def __init__(self):
-        self._lock = threading.Lock()
-        self._latest_metrics = None
-        self._exercise_type = "Squats"
+    ```
+def __init__(self):
+    self._lock = threading.Lock()
+    self._latest_metrics = None
+    self._exercise_type = "Squats"
 
-app_root = Path(__file__).resolve().parents[2]
+    app_root = Path(__file__).resolve().parents[2]
+    model_path = app_root / "ml_models" / "pose_landmarker_full.task"
 
-model_path = app_root / "ml_models" / "pose_landmarker_full.task"
-
-if not model_path.is_file():
-    raise FileNotFoundError(
-        f"Pose model file not found: {model_path}"
-    )
-
-base_option = python.BaseOptions(
-    model_asset_path=str(model_path)
-)
-
-        options = vision.PoseLandmarkerOptions(
-            base_options=base_option,
-            running_mode=vision.RunningMode.VIDEO,
-            min_pose_detection_confidence=0.7,
-            min_pose_presence_confidence=0.7,
-            min_tracking_confidence=0.7,
-            output_segmentation_masks=False
+    if not model_path.is_file():
+        raise FileNotFoundError(
+            f"Pose model file not found: {model_path}"
         )
 
-        self._landmarker = vision.PoseLandmarker.create_from_options(options)
+    base_option = python.BaseOptions(
+        model_asset_path=str(model_path)
+    )
 
-        self._detectors = {
-            "Squats": SquatDetector(),
-            "Push-ups": PushUpDetector(),
-            "Biceps Curls (Dumbbell)": BicepsCurlDetector(),
-            "Shoulder Press": ShoulderPressDetector(),
-            "Lunges": LungesDetector(),
-        }
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_option,
+        running_mode=vision.RunningMode.VIDEO,
+        min_pose_detection_confidence=0.7,
+        min_pose_presence_confidence=0.7,
+        min_tracking_confidence=0.7,
+        output_segmentation_masks=False
+    )
 
-        self._frame_timestamps_ms = 0
-    
-    def set_latest_metrics(self, metrics):
+    self._landmarker = vision.PoseLandmarker.create_from_options(options)
+
+    self._detectors = {
+        "Squats": SquatDetector(),
+        "Push-ups": PushUpDetector(),
+        "Biceps Curls (Dumbbell)": BicepsCurlDetector(),
+        "Shoulder Press": ShoulderPressDetector(),
+        "Lunges": LungesDetector(),
+    }
+
+    self._frame_timestamps_ms = 0
+
+     def set_latest_metrics(self, metrics):
         with self._lock:
             self._latest_metrics = metrics.copy()
 
